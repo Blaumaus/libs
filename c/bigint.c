@@ -1,3 +1,14 @@
+/**
+ * A bigint number is represented as an array of 32 bit uint chunks. 
+ * Each chunk size is 9 numbers.
+ * Chunks and numbers stored in chunks are stored backwards.
+ * 
+ * Example of bigint number (for the sake of simplicity MODULO is equal to 1000):
+ * n = "1234567890"
+ * bn = [890, 567, 234, 1]
+ * Such storage of numbers makes it possible to overflow the size of the chunk when calling addition operaions.
+*/
+
 // TODO: Add full support for signed numbers
 
 #include <stdio.h>
