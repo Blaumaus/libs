@@ -67,8 +67,8 @@ extern void xchg_bigint(BigInt *x, BigInt *y);
 extern void print_bigint(BigInt *x);
 
 int main(void) {
-  BigInt *x = new_bigint("0");
-  BigInt *y = new_bigint("100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
+  BigInt *x = new_bigint("10000000000000");
+  BigInt *y = new_bigint("5555555555555555555555555555555555555555555555555555555555555555555555555555");
 
   sub_bigint(x, y);
 
@@ -116,13 +116,11 @@ extern void print_bigint(BigInt *x) {
 }
 
 extern void add_bigint(BigInt *x, BigInt *y) {
-  if (y->sign) { // y < 0
-    sub_bigint(x, y);
-    return;
-  }
-
   _set_count_bigint(x, y);
   uint8_t cf = 0; // carry flag
+
+  if (cmp_bigint(x, y) == -1) x->sign = true;
+  else x->sign = false;
 
   for (size_t i = 0; i < x->count; ++i) {
     uint64_t temp = cf + x->number[i] + y->number[i];
@@ -138,7 +136,15 @@ extern void add_bigint(BigInt *x, BigInt *y) {
 
 
 extern void sub_bigint(BigInt *x, BigInt *y) {
-  if (cmp_bigint(x, y) == -1) xchg_bigint(x, y);
+  if (y->sign) { // y < 0
+    add_bigint(x, y);
+    return;
+  }
+
+  if (cmp_bigint(x, y) == -1) {
+    xchg_bigint(x, y);
+    x->sign = true;
+  } else x->sign = false;
 
   _set_count_bigint(x, y);
   uint8_t cf = 0; // carry flag
