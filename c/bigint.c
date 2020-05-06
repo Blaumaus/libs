@@ -1,5 +1,8 @@
+// TODO: Add full support for signed numbers
+
 #include <stdio.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -7,7 +10,7 @@
 #define _SWAP(a, b) { typeof(a) _SWAP = a; a = b; b = _SWAP; }
 
 typedef struct BigInt {
-  // uint8_t sign;
+  bool sign; // true is signed (-), false is unsigned (+)
   uint32_t* number; // pointer to the first chunk
   size_t count; // number of used chunks in an array
   size_t size; // amount of all chunks in an array
@@ -64,16 +67,13 @@ extern void xchg_bigint(BigInt *x, BigInt *y);
 extern void print_bigint(BigInt *x);
 
 int main(void) {
-  BigInt *x = new_bigint("1000");
-  BigInt *y = new_bigint("50000");
+  BigInt *x = new_bigint("0");
+  BigInt *y = new_bigint("100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
 
   sub_bigint(x, y);
 
   printf("x: ");
   print_bigint(x);
-
-  printf("y: ");
-  print_bigint(y);
 
   free_bigint(x);
   free_bigint(y);
@@ -86,6 +86,10 @@ extern void xchg_bigint(BigInt *x, BigInt *y) {
 
 extern int8_t cmp_bigint(BigInt *x, BigInt *y) {
   _set_count_bigint(x, y);
+
+  if (x->sign && !y->sign) return -1; 
+  if (y->sign && !x->sign) return 1;
+
   for (int i = x->count - 1; i != -1; --i) {
     if (x->number[i] < y->number[i]) return -1;
     if (x->number[i] > y->number[i]) return 1;
@@ -100,15 +104,23 @@ extern void print_bigint(BigInt *x) {
   }
 
   int i = x->count - 1;
-  for (; i > 0; --i) {
+  for (; i > 0; --i) { // Not necessary, but it's used in case if count and size would be unsynchronised somehow
     if (x->number[i] != 0) break;
   }
+
+  if (x->sign) putchar('-');
+  
   printf("%u", x->number[i]);
   for (--i; i != -1; --i) printf("%.9u", x->number[i]);
   putchar('\n');
 }
 
 extern void add_bigint(BigInt *x, BigInt *y) {
+  if (y->sign) { // y < 0
+    sub_bigint(x, y);
+    return;
+  }
+
   _set_count_bigint(x, y);
   uint8_t cf = 0; // carry flag
 
@@ -127,7 +139,7 @@ extern void add_bigint(BigInt *x, BigInt *y) {
 
 extern void sub_bigint(BigInt *x, BigInt *y) {
   if (cmp_bigint(x, y) == -1) xchg_bigint(x, y);
-  
+
   _set_count_bigint(x, y);
   uint8_t cf = 0; // carry flag
 
