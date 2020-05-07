@@ -22,8 +22,8 @@
 
 typedef struct BigInt {
   bool sign; // true is signed (-), false is unsigned (+)
-  uint32_t* number; // pointer to the first chunk
-  size_t count; // number of used chunks in an array
+  uint32_t* number; // an array of chunks
+  size_t count; // amount of used chunks in an array
   size_t size; // amount of all chunks in an array
 } BigInt;
 
@@ -66,11 +66,20 @@ static void _clr_count_bigint(BigInt *x) {
   x->count = i + 1;
 }
 
+static void _cp_bigint(BigInt* x, BigInt* y) {
+  x->size = y->sign;
+  x->count = y->count;
+  x->sign = y->sign;
+  for (size_t i = 0; i < y->count; ++i) x->number[i] = y->number[i];
+}
+
 extern BigInt* new_bigint(uint8_t *str);
 extern void free_bigint(BigInt *x);
 
 extern void add_bigint(BigInt *x, BigInt *y);
 extern void sub_bigint(BigInt *x, BigInt *y);
+
+extern void mul_bigint(BigInt *x, BigInt *y);
 
 extern int8_t cmp_bigint(BigInt *x, BigInt *y);
 extern void xchg_bigint(BigInt *x, BigInt *y);
@@ -78,8 +87,8 @@ extern void xchg_bigint(BigInt *x, BigInt *y);
 extern void print_bigint(BigInt *x);
 
 int main(void) {
-  BigInt *x = new_bigint("10000000000000");
-  BigInt *y = new_bigint("5555555555555555555555555555555555555555555555555555555555555555555555555555");
+  BigInt *x = new_bigint("100000000067890");
+  BigInt *y = new_bigint("12345678901234567890");
 
   sub_bigint(x, y);
 
@@ -130,7 +139,7 @@ extern void add_bigint(BigInt *x, BigInt *y) {
   _set_count_bigint(x, y);
   uint8_t cf = 0; // carry flag
 
-  if (cmp_bigint(x, y) == -1) x->sign = true;
+  if (cmp_bigint(x, y) == -1 && (x->sign && !y->sign || !x->sign && y->sign)) x->sign = true;
   else x->sign = false;
 
   for (size_t i = 0; i < x->count; ++i) {
@@ -167,6 +176,31 @@ extern void sub_bigint(BigInt *x, BigInt *y) {
   }
   _clr_count_bigint(x);
 }
+
+// TODO: Rewrite function to use more effective multiplication method
+// TODO: Refactor and optimise the code
+// extern void mul_bigint(BigInt *x, BigInt *y) {
+//   _set_count_bigint(x, y);
+
+//   BigInt* z = (BigInt*)malloc(sizeof(BigInt));
+//   if (x->sign && !y->sign || !x->sign && y->sign) z->sign = true;
+//   z->size = x->count + y->count;
+//   z->count = x->count + y->count;
+//   z->number = (uint32_t*)malloc(z->size * sizeof(uint32_t));
+
+//   for (size_t i = 0; i < x->count; ++i) {
+//     uint8_t cf = 0; // carry flag
+//     for (size_t j = 0; j < y->count; ++j) {
+//       uint64_t temp = (x->number[i] * y->number[j]) + z->number[i + j] + cf;
+//       z->number[i + j] = temp % MODULO; 
+//       cf = temp / MODULO;
+//     }
+//   }
+
+//   _clr_count_bigint(z);
+//   _cp_bigint(x, z);
+//   free_bigint(z);
+// }
 
 extern BigInt* new_bigint(uint8_t *str) {
   const size_t BUFFSIZE = 9;
